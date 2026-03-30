@@ -1,0 +1,27 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}Konfiguration neu geladen."
+  usage: "{prefix}Verwendung: /{label} reload"
+
+migration:
+  prompt:
+    line-1: "{prefix}Du betrittst den Server zum ersten Mal mit einem Premium-Konto."
+    line-2: "&7Es wurden Offline-Daten fuer deinen Namen gefunden."
+    line-3: "&7Moechtest du Inventar, Position, Statistiken und Fortschritte in dein Premium-Profil migrieren?"
+    button-yes: "&a[JA]"
+    button-yes-hover: "&7Offline-Daten in dein Premium-Profil laden."
+    button-separator: "&8 | "
+    button-no: "&c[NEIN]"
+    button-no-hover: "&7Deine aktuellen Premium-Daten behalten und die Migration ueberspringen."
+  completed: "{prefix}&aDeine Offline-Daten wurden erfolgreich migriert."
+  skipped: "{prefix}&eMigration uebersprungen. Deine aktuellen Premium-Daten wurden behalten."
+  no-data: "{prefix}&eEs wurden keine Offline-Daten zur Migration gefunden."
+  no-pending-choice: "{prefix}&eEs gibt aktuell keine ausstehende Migrationsentscheidung fuer dich."
+
+premium:
+  kick:
+    invalid-token: "&cUngueltiges Premium-Verifizierungstoken."
+    encryption-failed: "&cPremium-Verifizierung konnte nicht aktiviert werden."
+    error: "&cPremium-Verifizierung fehlgeschlagen."
+    protected-name: "&cFuer diesen Namen musst du mit einem Premium-Konto beitreten."

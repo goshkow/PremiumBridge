@@ -1,0 +1,161 @@
+# Enables extra console logging from PremiumBridge.
+# true  - log additional diagnostic information
+# false - keep console output clean
+debug: false
+
+language:
+  # Default plugin language when auto-detection is disabled or no matching locale file exists.
+  # Examples: en_US, ru_RU, de_DE, fr_FR, pl_PL, uk_UA, es_ES, it_IT
+  default: "en_US"
+
+  # If true, PremiumBridge tries to use the player's Minecraft client locale automatically.
+  # If false, the plugin always uses language.default.
+  auto-detect-client-locale: true
+
+auth-plugin:
+  # Which auth plugin bridge should be used.
+  # AUTO      - detect automatically
+  # AUTHME    - force AuthMe integration
+  # OPENLOGIN - force OpeNLogin integration
+  preferred: "AUTO"
+
+  # If true, service messages from the auth plugin are hidden for premium players
+  # when PremiumBridge handles login/registration automatically.
+  hide-service-messages-for-premium: true
+
+  # If true, PremiumBridge reloads the supported auth plugin after patching its message files.
+  reload-provider-after-message-patch: true
+
+authme:
+  # Delay before PremiumBridge starts its premium auto-login flow after player join.
+  # Measured in ticks. 20 ticks = 1 second.
+  auto-login-delay-ticks: 10
+
+  # If true, use "authme forcelogin" from console instead of only relying on the AuthMe API.
+  # This often works better with AuthMe's internal freeze/session logic.
+  use-forcelogin-command: true
+
+  # Delay before PremiumBridge restores position/movement after successful auto-login.
+  restore-location-delay-ticks: 2
+
+  # How many extra movement restoration attempts should be made after auto-login.
+  # Helps when an auth plugin leaves player speed at 0 or keeps movement blocked for a moment.
+  restore-movement-retries: 4
+
+  # Delay between repeated movement restoration attempts.
+  restore-movement-interval-ticks: 10
+
+  # Fallback walk speed to restore after login.
+  # Vanilla default is 0.2
+  restore-walk-speed: 0.2
+
+  # Fallback fly speed to restore after login.
+  # Vanilla default is 0.1
+  restore-fly-speed: 0.1
+
+registration:
+  # Controls what happens when a premium player joins for the first time and is not registered yet.
+  # true  - PremiumBridge auto-registers the player with a random password
+  # false - the player must register manually in the auth plugin
+  skip-for-premium: true
+
+  # Legacy compatibility key.
+  # If skip-for-premium exists, that setting has priority.
+  require-premium-registration: false
+
+  # Length of the generated password for premium auto-registration.
+  auto-register-password-length: 32
+
+  # Synthetic e-mail domain used when the auth plugin requires an e-mail during registration.
+  synthetic-email-domain: premium.local
+
+premium-verification:
+  # Master switch for PremiumBridge premium verification logic.
+  enabled: true
+
+  # Insecure fallback: check whether a Mojang profile exists for the nickname.
+  # This does NOT prove that the current connection really owns the premium account.
+  allow-insecure-mojang-lookup: false
+
+  # If true, insecure Mojang nickname lookup can also trigger auto-login.
+  # Recommended to keep false unless you fully accept the security risk.
+  allow-insecure-auto-login: false
+
+  # Timeout for Mojang API/session requests in seconds.
+  timeout-seconds: 4
+
+  protect-known-premium-names:
+    # If true, nicknames that were already confirmed as premium can only be used
+    # through a verified premium join.
+    enabled: false
+
+integrations:
+  addhead-premium:
+    # If true, PremiumBridge grants the configured permission to verified premium players.
+    # Intended for AddHeads integration so premium players do not receive duplicate tab heads.
+    enabled: false
+
+    # Permission that will be granted when the integration above is enabled.
+    permission: "addhead.premium"
+
+migration:
+  offline-data:
+    # Master switch for offline -> premium data migration.
+    enabled: true
+
+    # Controls how offline-mode data should be handled for first-time premium joins.
+    # disabled   - never migrate anything
+    # automatic  - migrate immediately without asking the player
+    # ask-player - show clickable YES/NO buttons and let the player choose
+    mode: "ask-player"
+
+    # Delay before showing the migration prompt when mode is ask-player.
+    # Measured in ticks. 20 ticks = 1 second.
+    prompt-delay-ticks: 40
+
+    # If true, migration is marked as processed even when no offline files were found.
+    # If false, PremiumBridge may check again on a future join.
+    mark-even-if-empty: false
+
+    # If true, existing premium player files are backed up and replaced during first successful migration.
+    # If false, migration will skip files that already exist for the premium UUID.
+    replace-existing-target-before-first-success: true
+
+    # If true, PremiumBridge restores the saved join location after auto-login.
+    # This helps return the player to the expected place after auth plugin freezes/teleports.
+    restore-join-location: true
+
+message-suppression:
+  # Time window in milliseconds during which outgoing auth-plugin messages can be hidden.
+  window-millis: 30000
+
+  # Extra regex patterns used by the fallback packet-level message filter.
+  # Most admins will not need to change this list.
+  patterns:
+    - "authme"
+    - "/login"
+    - "/l\\b"
+    - "/register"
+    - "/reg\\b"
+    - "authenticate"
+    - "authentication"
+    - "logged\\s+in"
+    - "successfully\\s+logged\\s+in"
+    - "logged\\s+successfully"
+    - "you\\s+are\\s+now\\s+logged\\s+in"
+    - "you\\s+have\\s+been\\s+logged\\s+in"
+    - "you\\s+have\\s+logged\\s+in"
+    - "you\\s+are\\s+authenticated"
+    - "authentication\\s+successful"
+    - "successfully\\s+authenticated"
+    - "authenticated\\s+successfully"
+    - "login\\s+confirmed"
+    - "login\\s+complete"
+    - "logged\\s+into\\s+the\\s+server"
+    - "you\\s+have\\s+successfully\\s+logged\\s+in"
+    - "successfully\\s+logged\\s+into"
+    - "successfully\\s+logged\\s+on"
+    - "please\\s+login"
+    - "please\\s+register"
+    - "register\\s+success"
+    - "login\\s+success"

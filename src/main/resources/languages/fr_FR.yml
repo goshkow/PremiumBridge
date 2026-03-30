@@ -1,0 +1,27 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}Configuration rechargee."
+  usage: "{prefix}Utilisation : /{label} reload"
+
+migration:
+  prompt:
+    line-1: "{prefix}Vous rejoignez le serveur avec un compte premium pour la premiere fois."
+    line-2: "&7Des donnees hors ligne ont ete trouvees pour votre pseudo."
+    line-3: "&7Voulez-vous migrer votre inventaire, position, statistiques et progres vers votre profil premium ?"
+    button-yes: "&a[OUI]"
+    button-yes-hover: "&7Charger vos donnees hors ligne dans votre profil premium."
+    button-separator: "&8 | "
+    button-no: "&c[NON]"
+    button-no-hover: "&7Conserver vos donnees premium actuelles et ignorer la migration."
+  completed: "{prefix}&aVos donnees hors ligne ont ete migrees avec succes."
+  skipped: "{prefix}&eMigration ignoree. Vos donnees premium actuelles ont ete conservees."
+  no-data: "{prefix}&eAucune donnee hors ligne a migrer n'a ete trouvee."
+  no-pending-choice: "{prefix}&eAucun choix de migration n'est en attente pour vous."
+
+premium:
+  kick:
+    invalid-token: "&cJeton de verification premium invalide."
+    encryption-failed: "&cImpossible d'activer la verification premium."
+    error: "&cLa verification premium a echoue."
+    protected-name: "&cVous devez rejoindre avec un compte premium pour utiliser ce pseudo."

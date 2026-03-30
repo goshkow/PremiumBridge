@@ -1,0 +1,27 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}Konfiguracja przeladowana."
+  usage: "{prefix}Uzycie: /{label} reload"
+
+migration:
+  prompt:
+    line-1: "{prefix}Laczysz sie z kontem premium po raz pierwszy."
+    line-2: "&7Znaleziono dane z trybu offline dla twojego nicku."
+    line-3: "&7Czy chcesz przeniesc ekwipunek, pozycje, statystyki i osiagniecia do profilu premium?"
+    button-yes: "&a[TAK]"
+    button-yes-hover: "&7Zaladuj dane z trybu offline do profilu premium."
+    button-separator: "&8 | "
+    button-no: "&c[NIE]"
+    button-no-hover: "&7Zachowaj obecne dane premium i pomin migracje."
+  completed: "{prefix}&aDane z trybu offline zostaly pomyslnie przeniesione."
+  skipped: "{prefix}&eMigracja pominieta. Zachowano obecne dane premium."
+  no-data: "{prefix}&eNie znaleziono danych z trybu offline do przeniesienia."
+  no-pending-choice: "{prefix}&eNie masz teraz oczekujacego wyboru migracji."
+
+premium:
+  kick:
+    invalid-token: "&cNieprawidlowy token weryfikacji premium."
+    encryption-failed: "&cNie udalo sie wlaczyc weryfikacji premium."
+    error: "&cWeryfikacja premium nie powiodla sie."
+    protected-name: "&cAby uzyc tego nicku, musisz dolaczyc z konta premium."

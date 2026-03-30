@@ -1,0 +1,27 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}Configurazione ricaricata."
+  usage: "{prefix}Uso: /{label} reload"
+
+migration:
+  prompt:
+    line-1: "{prefix}Stai entrando con un account premium per la prima volta."
+    line-2: "&7Sono stati trovati dati offline per il tuo nickname."
+    line-3: "&7Vuoi migrare inventario, posizione, statistiche e progressi nel tuo profilo premium?"
+    button-yes: "&a[SI]"
+    button-yes-hover: "&7Carica i tuoi dati offline nel profilo premium."
+    button-separator: "&8 | "
+    button-no: "&c[NO]"
+    button-no-hover: "&7Mantieni i tuoi dati premium attuali e salta la migrazione."
+  completed: "{prefix}&aI tuoi dati offline sono stati migrati con successo."
+  skipped: "{prefix}&eMigrazione saltata. I tuoi dati premium attuali sono stati mantenuti."
+  no-data: "{prefix}&eNessun dato offline trovato da migrare."
+  no-pending-choice: "{prefix}&eNon hai alcuna scelta di migrazione in sospeso."
+
+premium:
+  kick:
+    invalid-token: "&cToken di verifica premium non valido."
+    encryption-failed: "&cImpossibile attivare la verifica premium."
+    error: "&cLa verifica premium non e riuscita."
+    protected-name: "&cDevi entrare con un account premium per usare questo nickname."

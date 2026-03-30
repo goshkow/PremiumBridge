@@ -1,0 +1,27 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}Конфігурацію перезавантажено."
+  usage: "{prefix}Використання: /{label} reload"
+
+migration:
+  prompt:
+    line-1: "{prefix}Ви вперше заходите з ліцензійного акаунта."
+    line-2: "&7Для вашого ніка знайдено дані з офлайн-режиму."
+    line-3: "&7Перенести інвентар, позицію, статистику та досягнення у ваш premium-профіль?"
+    button-yes: "&a[ТАК]"
+    button-yes-hover: "&7Завантажити дані офлайн-режиму у premium-профіль."
+    button-separator: "&8 | "
+    button-no: "&c[НІ]"
+    button-no-hover: "&7Залишити поточні premium-дані та пропустити міграцію."
+  completed: "{prefix}&aДані з офлайн-режиму успішно перенесено."
+  skipped: "{prefix}&eМіграцію пропущено. Поточні premium-дані збережено."
+  no-data: "{prefix}&eДані з офлайн-режиму для перенесення не знайдено."
+  no-pending-choice: "{prefix}&eДля вас зараз немає очікуваного вибору міграції."
+
+premium:
+  kick:
+    invalid-token: "&cНеправильний токен premium-перевірки."
+    encryption-failed: "&cНе вдалося увімкнути premium-перевірку."
+    error: "&cНе вдалося завершити premium-перевірку."
+    protected-name: "&cДля входу під цим ніком потрібен ліцензійний акаунт."

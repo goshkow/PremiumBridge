@@ -1,0 +1,29 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}Configuration reloaded."
+  usage: "{prefix}Usage: /{label} reload"
+
+migration:
+  prompt:
+    line-1: "{prefix}You are joining with a premium account for the first time."
+    line-2: "&7Offline-mode data was found for your nickname."
+    line-3: "&7Do you want to migrate your inventory, position, stats and advancements to your premium profile?"
+    button-yes: "&a[YES]"
+    button-yes-hover: "&7Load your offline-mode data into your premium profile."
+    button-separator: "&8 | "
+    button-no: "&c[NO]"
+    button-no-hover: "&7Keep your current premium data and skip migration."
+  completed: "{prefix}&aYour offline-mode migration was accepted successfully."
+  reconnect-required: "{prefix}&ePlease reconnect once so your migrated inventory, position and stats load correctly."
+  reconnect-kick: "&eReconnect to finish loading your migrated offline-mode data."
+  skipped: "{prefix}&eMigration skipped. Your current premium data was kept."
+  no-data: "{prefix}&eNo offline-mode data was found to migrate."
+  no-pending-choice: "{prefix}&eThere is no pending migration choice for you."
+
+premium:
+  kick:
+    invalid-token: "&cInvalid premium verification token."
+    encryption-failed: "&cFailed to enable premium verification."
+    error: "&cPremium verification failed."
+    protected-name: "&cYou must join with a premium account to use this nickname."

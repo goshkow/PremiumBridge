@@ -1,0 +1,22 @@
+name: PremiumBridge
+version: '${project.version}'
+main: goshkow.premlogin.PremiumLoginPlugin
+api-version: '1.21'
+authors:
+  - goshkow
+description: Automatically handles premium players with supported auth plugins on offline-mode servers.
+softdepend:
+  - AuthMe
+  - OpeNLogin
+  - ProtocolLib
+  - AddHeads
+  - xAuth
+commands:
+  premauthbridge:
+    description: Reload PremiumBridge configuration and handle migration prompts
+    usage: /premauthbridge reload
+    permission: premauthbridge.reload
+permissions:
+  premauthbridge.reload:
+    description: Allows reloading PremiumBridge configuration
+    default: op
