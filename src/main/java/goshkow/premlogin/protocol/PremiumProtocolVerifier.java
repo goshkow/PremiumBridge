@@ -56,6 +56,11 @@ public final class PremiumProtocolVerifier {
     }
 
     public boolean initialize() {
+        if (plugin.isVelocityModernMode()) {
+            plugin.getLogger().info("velocity-modern is enabled; raw ProtocolLib encryption handshake is disabled.");
+            return false;
+        }
+
         if (!plugin.getConfig().getBoolean("premium-verification.enabled", true)) {
             plugin.getLogger().info("Protocol premium verification is disabled in config.");
             return false;

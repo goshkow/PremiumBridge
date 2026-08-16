@@ -25,6 +25,14 @@ public interface PremiumBridgeApi {
 
     boolean isMigrationProcessed(String nickname);
 
+    UUID getOfflineUuid(Player player);
+
+    UUID getOfflineUuid(UUID premiumUuid);
+
+    UUID getPremiumUuid(UUID offlineUuid);
+
+    UUID calculateOfflineUuid(String nickname);
+
     UUID getLinkedPremiumUuid(String nickname);
 
     UUID getLinkedOfflineUuid(String nickname);

@@ -71,6 +71,31 @@ final class PremiumBridgeApiImpl implements PremiumBridgeApi {
     }
 
     @Override
+    public UUID getOfflineUuid(Player player) {
+        if (player == null) {
+            return null;
+        }
+
+        UUID linked = plugin.getPlayerStore().getLinkedOfflineUuid(player.getUniqueId());
+        return linked != null ? linked : plugin.getPlayerStore().calculateOfflineUuid(player.getName());
+    }
+
+    @Override
+    public UUID getOfflineUuid(UUID premiumUuid) {
+        return plugin.getPlayerStore().getLinkedOfflineUuid(premiumUuid);
+    }
+
+    @Override
+    public UUID getPremiumUuid(UUID offlineUuid) {
+        return plugin.getPlayerStore().getLinkedPremiumUuid(offlineUuid);
+    }
+
+    @Override
+    public UUID calculateOfflineUuid(String nickname) {
+        return plugin.getPlayerStore().calculateOfflineUuid(nickname);
+    }
+
+    @Override
     public UUID getLinkedPremiumUuid(String nickname) {
         return plugin.getPlayerStore().getLinkedPremiumUuid(nickname);
     }

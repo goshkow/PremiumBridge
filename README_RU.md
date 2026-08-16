@@ -2,7 +2,7 @@
 
 # PremiumBridge
 
-PremiumBridge — это плагин для Paper 1.21.x оффлайн-серверов, который распознаёт настоящие premium-входы, автоматически авторизует их через поддерживаемые auth-плагины и оставляет пиратские входы на обычном сценарии логина и регистрации.
+PremiumBridge — это менеджер premium-сессий для оффлайн-серверов Minecraft Java. Версия 1.0.3 поддерживает Minecraft Java 1.21.9-1.21.11, 26.1.x и 26.2 одним backend-JAR.
 
 ## Возможности
 
@@ -29,7 +29,8 @@ PremiumBridge — это плагин для Paper 1.21.x оффлайн-сер�
 
 ## Требования
 
-- Paper 1.21.x
+- Paper 1.21.9-1.21.11, 26.1.x или 26.2
+- Purpur или другой совместимый Paper fork
 - ProtocolLib
 - Один из поддерживаемых auth-плагинов
 
@@ -41,6 +42,19 @@ PremiumBridge — это плагин для Paper 1.21.x оффлайн-сер�
 4. Один раз запусти сервер.
 5. При необходимости отредактируй `plugins/PremiumBridge/config.yml`.
 6. Перезапусти сервер или выполни `/premauthbridge reload`.
+
+## Поддержка Velocity
+
+PremiumBridge поддерживает Velocity, но не требует его.
+
+1. Положи `PremiumBridge-Velocity.jar` в `Velocity/plugins/`.
+2. Положи `PremiumBridge.jar` в папку `plugins/` каждого Paper или Purpur backend-сервера.
+3. В `velocity.toml` включи `online-mode = false` и `player-info-forwarding-mode = "modern"`.
+4. Включи native Velocity forwarding в `config/paper-global.yml` и укажи тот же `forwarding.secret`.
+5. Один раз запусти Velocity, скопируй `shared-secret` из `plugins/PremiumBridge/velocity.properties` и укажи его в `premium-verification.velocity-modern.shared-secret` backend-конфига.
+6. Установи `premium-verification.mode: "velocity-modern"` и полностью перезапусти Velocity и backend.
+
+Полная инструкция находится в [VELOCITY_SETUP.md](VELOCITY_SETUP.md). Spigot не поддерживает этот режим modern forwarding.
 
 ## Локализации
 

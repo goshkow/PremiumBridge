@@ -1,6 +1,7 @@
 package goshkow.premlogin;
 
 import goshkow.premlogin.api.PremiumBridgeApi;
+import goshkow.premlogin.bridge.PremiumAssertion;
 import goshkow.premlogin.protocol.PremiumProtocolVerifier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -15,7 +16,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -35,12 +35,12 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     private PremiumVerificationService premiumVerificationService;
     private PremiumProtocolVerifier premiumProtocolVerifier;
     private AuthMeMessageSuppressor messageSuppressor;
-    private AuthPluginMessagePatcher authPluginMessagePatcher;
     private AuthPluginBridge authPluginBridge;
     private LanguageManager languageManager;
     private PersistentPlayerStore playerStore;
     private OfflineDataMigrationService offlineDataMigrationService;
     private AddHeadPermissionService addHeadPermissionService;
+    private VelocityModernBridge velocityModernBridge;
     private PremiumBridgeApi api;
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<UUID, PlayerRestoreState> restoreStates = new ConcurrentHashMap<>();
@@ -66,11 +66,11 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         playerStore.load();
         authPluginBridge = initializeAuthProvider();
         authPluginAvailable = authPluginBridge != null;
-        authPluginMessagePatcher = new AuthPluginMessagePatcher(this);
-        boolean authPluginMessagesPatched = authPluginMessagePatcher.apply();
         premiumVerificationService = new PremiumVerificationService(this);
         offlineDataMigrationService = new OfflineDataMigrationService(this, playerStore);
         addHeadPermissionService = new AddHeadPermissionService(this);
+        velocityModernBridge = new VelocityModernBridge(this);
+        velocityModernBridge.initialize();
         premiumProtocolVerifier = new PremiumProtocolVerifier(this);
         premiumProtocolVerifier.initialize();
         messageSuppressor = new AuthMeMessageSuppressor(this);
@@ -85,13 +85,14 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             getCommand("premauthbridge").setTabCompleter(this);
         }
 
-        authPluginMessagePatcher.reloadProvidersIfNeeded(authPluginMessagesPatched);
-
         getLogger().info("PremiumBridge enabled.");
     }
 
     @Override
     public void onDisable() {
+        if (velocityModernBridge != null) {
+            velocityModernBridge.close();
+        }
         if (api != null) {
             getServer().getServicesManager().unregister(PremiumBridgeApi.class, api);
         }
@@ -116,16 +117,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         ));
         int delayTicks = getConfig().getInt("authme.auto-login-delay-ticks", 10);
 
-        Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> handleJoin(player), delayTicks);
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerLogin(PlayerLoginEvent event) {
-        if (!suppressionAvailable || !getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
-            return;
-        }
-
-        messageSuppressor.mark(event.getPlayer());
+        Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> handleJoin(player, 0), delayTicks);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -154,19 +146,41 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         recentMigrationApplied.remove(event.getPlayer().getUniqueId());
     }
 
-    private void handleJoin(Player player) {
+    private void handleJoin(Player player, int velocityAttempt) {
         if (!player.isOnline()) {
             return;
         }
 
-        PremiumCheckResult premiumCheck = premiumVerificationService.check(player);
+        if (!getConfig().getBoolean("premium-verification.enabled", true)) {
+            return;
+        }
+
+        PremiumCheckResult premiumCheck;
+        if (isVelocityModernMode()) {
+            PremiumAssertion assertion = velocityModernBridge == null ? null : velocityModernBridge.consume(player);
+            if (assertion == null) {
+                int maxAttempts = Math.max(0, getConfig().getInt("premium-verification.velocity-modern.wait-attempts", 20));
+                if (velocityAttempt < maxAttempts) {
+                    long intervalTicks = Math.max(1L, getConfig().getLong("premium-verification.velocity-modern.wait-interval-ticks", 2L));
+                    Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> handleJoin(player, velocityAttempt + 1), intervalTicks);
+                } else {
+                    debugMessage(player.getName() + " has no valid Velocity assertion; standalone premium detection is disabled in velocity-modern mode.");
+                }
+                return;
+            }
+
+            premiumCheck = PremiumCheckResult.secure("verified by Velocity modern forwarding and HMAC assertion");
+        } else {
+            premiumCheck = premiumVerificationService.check(player);
+        }
+
         if (!premiumCheck.premium()) {
-            debug(player.getName() + " is not treated as premium: " + premiumCheck.reason());
+            debugMessage(player.getName() + " is not treated as premium: " + premiumCheck.reason());
             return;
         }
 
         if (!premiumCheck.secure() && !getConfig().getBoolean("premium-verification.allow-insecure-auto-login", false)) {
-            debug(player.getName() + " matched only insecure premium verification. Auto-login skipped.");
+            debugMessage(player.getName() + " matched only insecure premium verification. Auto-login skipped.");
             return;
         }
 
@@ -187,7 +201,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         boolean registered = authPluginBridge.isRegistered(player);
         if (!registered) {
             if (!shouldSkipPremiumRegistration()) {
-                debug(player.getName() + " is premium but still must register manually.");
+                debugMessage(player.getName() + " is premium but still must register manually.");
                 return;
             }
 
@@ -199,12 +213,12 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             String generatedEmail = buildSyntheticEmail(player);
             boolean registerResult = authPluginBridge.register(player, generatedPassword, generatedEmail);
             if (!registerResult) {
-                debug(player.getName() + " auto-registration failed.");
+                debugMessage(player.getName() + " auto-registration failed.");
                 return;
             }
 
             registered = true;
-            debug(player.getName() + " was auto-registered for premium-only access.");
+            debugMessage(player.getName() + " was auto-registered for premium-only access.");
         }
 
         prepareMigrationPrompt(player, premiumCheck);
@@ -214,7 +228,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
 
         if (authPluginBridge.isAuthenticated(player)) {
-            debug(player.getName() + " is already authenticated in " + authPluginBridge.getProviderId() + ". No forced login needed.");
+            debugMessage(player.getName() + " is already authenticated in " + authPluginBridge.getProviderId() + ". No forced login needed.");
             restorePostAuthState(player);
             scheduleMigrationPromptIfNeeded(player);
             return;
@@ -225,10 +239,10 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             restorePostAuthState(player);
             scheduleMigrationPromptIfNeeded(player);
         }
-        debug(player.getName() + " forceLogin result=" + loginResult + ", provider=" + authPluginBridge.getProviderId() + ", secure=" + premiumCheck.secure() + ", reason=" + premiumCheck.reason());
+        debugMessage(player.getName() + " forceLogin result=" + loginResult + ", provider=" + authPluginBridge.getProviderId() + ", secure=" + premiumCheck.secure() + ", reason=" + premiumCheck.reason());
     }
 
-    private void debug(String message) {
+    void debugMessage(String message) {
         if (getConfig().getBoolean("debug", false)) {
             getLogger().info("[debug] " + message);
         }
@@ -431,14 +445,17 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             languageManager.reload();
             authPluginBridge = initializeAuthProvider();
             authPluginAvailable = authPluginBridge != null;
-            boolean authPluginMessagesPatched = authPluginMessagePatcher.apply();
             premiumVerificationService = new PremiumVerificationService(this);
             playerStore.load();
+            if (velocityModernBridge != null) {
+                velocityModernBridge.close();
+            }
+            velocityModernBridge = new VelocityModernBridge(this);
+            velocityModernBridge.initialize();
             if (suppressionAvailable) {
                 messageSuppressor.reloadPatterns();
                 messageSuppressor.reloadKnownPluginMessages();
             }
-            authPluginMessagePatcher.reloadProvidersIfNeeded(authPluginMessagesPatched);
             sender.sendMessage(languageManager.text(sender, "command.reload-success", Map.of("label", label)));
             return true;
         }
@@ -494,6 +511,12 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
     boolean hasActiveAuthProvider() {
         return authPluginAvailable && authPluginBridge != null;
+    }
+
+    public boolean isVelocityModernMode() {
+        return "velocity-modern".equalsIgnoreCase(
+            getConfig().getString("premium-verification.mode", "standalone")
+        );
     }
 
     String getActiveAuthProviderId() {

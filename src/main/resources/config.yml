@@ -21,10 +21,8 @@ auth-plugin:
 
   # If true, service messages from the auth plugin are hidden for premium players
   # when PremiumBridge handles login/registration automatically.
+  # This is applied per player at packet level so cracked players still see the normal prompts.
   hide-service-messages-for-premium: true
-
-  # If true, PremiumBridge reloads the supported auth plugin after patching its message files.
-  reload-provider-after-message-patch: true
 
 authme:
   # Delay before PremiumBridge starts its premium auto-login flow after player join.
@@ -73,6 +71,12 @@ premium-verification:
   # Master switch for PremiumBridge premium verification logic.
   enabled: true
 
+  # Verification backend.
+  # standalone      - uses the local ProtocolLib verifier on a direct Bukkit/Paper server.
+  # velocity-modern - disables all local encryption packets and trusts only a signed
+  #                    assertion from the PremiumBridge module running on Velocity.
+  mode: "standalone"
+
   # Insecure fallback: check whether a Mojang profile exists for the nickname.
   # This does NOT prove that the current connection really owns the premium account.
   allow-insecure-mojang-lookup: false
@@ -88,6 +92,22 @@ premium-verification:
     # If true, nicknames that were already confirmed as premium can only be used
     # through a verified premium join.
     enabled: false
+
+  velocity-modern:
+    # This mode is used only when players enter through the PremiumBridge Velocity companion.
+    # Velocity performs the real Mojang authentication; the backend never sends an encryption packet.
+    # Paper receives the verified Mojang UUID and profile properties through native modern forwarding.
+
+    # Namespaced plugin-message channel shared by Velocity and the backend.
+    channel: "premiumbridge:auth"
+
+    # Copy the generated secret from Velocity's plugins/PremiumBridge/velocity.properties.
+    # Keep it private and use the same value on every backend behind this proxy.
+    shared-secret: "CHANGE_ME"
+
+    # How long the backend waits for the proxy assertion after the player joins.
+    wait-attempts: 20
+    wait-interval-ticks: 2
 
 integrations:
   addhead-premium:

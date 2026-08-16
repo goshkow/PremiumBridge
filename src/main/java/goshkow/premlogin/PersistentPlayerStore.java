@@ -4,6 +4,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +47,7 @@ public final class PersistentPlayerStore {
         String key = "premium-profiles." + normalize(nickname);
         configuration.set(key + ".last-known-name", nickname);
         configuration.set(key + ".uuid", premiumUuid.toString());
-        UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + nickname).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        UUID offlineUuid = calculateOfflineUuid(nickname);
         configuration.set("uuid-links.by-name." + normalize(nickname) + ".offline", offlineUuid.toString());
         configuration.set("uuid-links.by-name." + normalize(nickname) + ".premium", premiumUuid.toString());
         configuration.set("uuid-links.by-offline." + offlineUuid, premiumUuid.toString());
@@ -117,6 +118,40 @@ public final class PersistentPlayerStore {
         }
 
         return UUID.fromString(raw);
+    }
+
+    public UUID getLinkedOfflineUuid(UUID premiumUuid) {
+        if (premiumUuid == null) {
+            return null;
+        }
+
+        String raw = configuration.getString("uuid-links.by-premium." + premiumUuid);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        return UUID.fromString(raw);
+    }
+
+    public UUID getLinkedPremiumUuid(UUID offlineUuid) {
+        if (offlineUuid == null) {
+            return null;
+        }
+
+        String raw = configuration.getString("uuid-links.by-offline." + offlineUuid);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        return UUID.fromString(raw);
+    }
+
+    public UUID calculateOfflineUuid(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            return null;
+        }
+
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + nickname).getBytes(StandardCharsets.UTF_8));
     }
 
     private String normalize(String nickname) {
