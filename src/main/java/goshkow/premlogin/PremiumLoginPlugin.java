@@ -314,8 +314,10 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             return;
         }
 
-        PremiumCheckResult earlyCheck = premiumVerificationService.check(player);
-        if (earlyCheck.secure()) {
+        UUID offlineUuid = UUID.nameUUIDFromBytes(
+            ("OfflinePlayer:" + player.getName()).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
+        if (!offlineUuid.equals(player.getUniqueId())) {
             verifiedPremiumSessions.add(player.getUniqueId());
             messageSuppressor.mark(player);
         }
