@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.6
+
+- added early player-state capture before AuthMe/OpeNLogin join processing
+- added a one-tick delay before premium auto-login
+- restored the original position after auth-plugin spawn teleports
+- added delayed restoration for game mode, operator status, flight and movement state
+- stopped location correction when the player begins moving normally
+
 ## 1.0.5
 
 - fixed movement speed restoration for players who log in manually through AuthMe or OpeNLogin
