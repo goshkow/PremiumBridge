@@ -214,6 +214,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
                     long intervalTicks = Math.max(1L, getConfig().getLong("premium-verification.velocity-modern.wait-interval-ticks", 2L));
                     Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> handleJoin(player, velocityAttempt + 1), intervalTicks);
                 } else {
+                    clearPremiumMessageSuppression(player);
                     debugMessage(player.getName() + " has no valid Velocity assertion; standalone premium detection is disabled in velocity-modern mode.");
                 }
                 return;
@@ -247,7 +248,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         if (premiumCheck.secure()) {
             verifiedPremiumSessions.add(player.getUniqueId());
             if (suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
-                messageSuppressor.mark(player);
+                messageSuppressor.beginPremiumLogin(player);
             }
             playerStore.rememberPremiumProfile(player.getName(), player.getUniqueId());
         } else {
@@ -259,18 +260,24 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         boolean registered = authPluginBridge.isRegistered(player);
         if (!registered) {
             if (!shouldSkipPremiumRegistration()) {
+                if (suppressionAvailable) {
+                    messageSuppressor.clear(player);
+                }
                 debugMessage(player.getName() + " is premium but still must register manually.");
                 return;
             }
 
             if (suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
-                messageSuppressor.mark(player);
+                messageSuppressor.beginPremiumLogin(player);
             }
 
             String generatedPassword = generatePassword();
             String generatedEmail = buildSyntheticEmail(player);
             boolean registerResult = authPluginBridge.register(player, generatedPassword, generatedEmail);
             if (!registerResult) {
+                if (suppressionAvailable) {
+                    messageSuppressor.clear(player);
+                }
                 debugMessage(player.getName() + " auto-registration failed.");
                 return;
             }
@@ -282,7 +289,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         prepareMigrationPrompt(player, premiumCheck);
 
         if (registered && suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
-            messageSuppressor.mark(player);
+            messageSuppressor.beginPremiumLogin(player);
         }
 
         if (authPluginBridge.isAuthenticated(player)) {
@@ -296,6 +303,8 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         if (loginResult) {
             restorePostAuthState(player);
             scheduleMigrationPromptIfNeeded(player);
+        } else if (suppressionAvailable) {
+            messageSuppressor.clear(player);
         }
         debugMessage(player.getName() + " forceLogin result=" + loginResult + ", provider=" + authPluginBridge.getProviderId() + ", secure=" + premiumCheck.secure() + ", reason=" + premiumCheck.reason());
     }
@@ -319,7 +328,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         );
         if (!offlineUuid.equals(player.getUniqueId())) {
             verifiedPremiumSessions.add(player.getUniqueId());
-            messageSuppressor.mark(player);
+            messageSuppressor.beginPremiumLogin(player);
         }
     }
 
@@ -385,7 +394,11 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             return;
         }
 
-        long delay = Math.max(20L, getConfig().getLong("migration.offline-data.prompt-delay-ticks", 40L));
+        long configuredDelay = Math.max(20L, getConfig().getLong("migration.offline-data.prompt-delay-ticks", 40L));
+        long muteGraceTicks = (long) Math.ceil(
+            Math.max(0L, getConfig().getLong("message-suppression.after-auto-login-millis", 2000L)) / 50.0D
+        );
+        long delay = Math.max(configuredDelay, muteGraceTicks + 1L);
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (!player.isOnline()) {
                 return;
@@ -456,7 +469,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         locationRestoreUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
         movedAfterAuthentication.remove(player.getUniqueId());
         if (suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
-            messageSuppressor.mark(player);
+            messageSuppressor.finishPremiumLogin(player);
         }
 
         long delayTicks = Math.max(1L, getConfig().getLong("authme.restore-location-delay-ticks", 2L));
@@ -648,10 +661,6 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             }
             velocityModernBridge = new VelocityModernBridge(this);
             velocityModernBridge.initialize();
-            if (suppressionAvailable) {
-                messageSuppressor.reloadPatterns();
-                messageSuppressor.reloadKnownPluginMessages();
-            }
             if (updateCheckerService != null) {
                 updateCheckerService.restart();
             }

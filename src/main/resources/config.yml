@@ -159,44 +159,7 @@ migration:
     restore-join-location: true
 
 message-suppression:
-  # Time window in milliseconds during which outgoing auth-plugin messages can be hidden.
-  window-millis: 30000
-
-  # Extra regex patterns used by the fallback packet-level message filter.
-  # Most admins will not need to change this list.
-  patterns:
-    - "authme"
-    - "/login"
-    - "/l\\b"
-    - "/register"
-    - "/reg\\b"
-    - "authenticate"
-    - "authentication"
-    - "logged\\s+in"
-    - "successfully\\s+logged\\s+in"
-    - "logged\\s+successfully"
-    - "you\\s+are\\s+now\\s+logged\\s+in"
-    - "you\\s+have\\s+been\\s+logged\\s+in"
-    - "you\\s+have\\s+logged\\s+in"
-    - "you\\s+are\\s+authenticated"
-    - "authentication\\s+successful"
-    - "successfully\\s+authenticated"
-    - "authenticated\\s+successfully"
-    - "login\\s+confirmed"
-    - "login\\s+complete"
-    - "logged\\s+into\\s+the\\s+server"
-    - "you\\s+have\\s+successfully\\s+logged\\s+in"
-    - "successfully\\s+logged\\s+into"
-    - "successfully\\s+logged\\s+on"
-    - "please\\s+login"
-    - "please\\s+register"
-    - "register\\s+success"
-    - "login\\s+success"
-    # Common localized authentication confirmations. These are applied only to verified premium sessions.
-    - "авториз"
-    - "авторизац"
-    - "аутентифиц"
-    - "authori[sz]"
-    - "autoriza"
-    - "autoryz"
-    - "autentific"
+  # During automatic premium authentication, block all outgoing chat/system/title/action-bar packets.
+  # The mute starts when the premium session is detected and ends after this grace period
+  # following a successful login. This does not affect offline players.
+  after-auto-login-millis: 2000
