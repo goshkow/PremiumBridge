@@ -50,7 +50,9 @@ final class AuthMeMessageSuppressor {
             plugin,
             ListenerPriority.HIGHEST,
             PacketType.Play.Server.SYSTEM_CHAT,
-            PacketType.Play.Server.CHAT
+            PacketType.Play.Server.CHAT,
+            PacketType.Play.Server.DISGUISED_CHAT,
+            PacketType.Play.Server.SET_ACTION_BAR_TEXT
         ) {
             @Override
             public void onPacketSending(PacketEvent event) {

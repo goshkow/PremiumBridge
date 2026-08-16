@@ -140,6 +140,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
 
         Player player = event.getPlayer();
+        armEarlyPremiumMessageSuppression(player);
         captureInitialRestoreState(player);
         recentMigrationApplied.put(player.getUniqueId(), playerStore.consumeRecentMigrationApplied(player.getName()));
         movementRepairUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
@@ -224,11 +225,13 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
 
         if (!premiumCheck.premium()) {
+            clearPremiumMessageSuppression(player);
             debugMessage(player.getName() + " is not treated as premium: " + premiumCheck.reason());
             return;
         }
 
         if (!premiumCheck.secure() && !getConfig().getBoolean("premium-verification.allow-insecure-auto-login", false)) {
+            clearPremiumMessageSuppression(player);
             debugMessage(player.getName() + " matched only insecure premium verification. Auto-login skipped.");
             return;
         }
@@ -243,6 +246,9 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
         if (premiumCheck.secure()) {
             verifiedPremiumSessions.add(player.getUniqueId());
+            if (suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
+                messageSuppressor.mark(player);
+            }
             playerStore.rememberPremiumProfile(player.getName(), player.getUniqueId());
         } else {
             verifiedPremiumSessions.remove(player.getUniqueId());
@@ -297,6 +303,28 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     void debugMessage(String message) {
         if (getConfig().getBoolean("debug", false)) {
             getLogger().info("[debug] " + message);
+        }
+    }
+
+    private void armEarlyPremiumMessageSuppression(Player player) {
+        if (!suppressionAvailable
+            || !getConfig().getBoolean("premium-verification.enabled", true)
+            || !getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)
+            || premiumVerificationService == null) {
+            return;
+        }
+
+        PremiumCheckResult earlyCheck = premiumVerificationService.check(player);
+        if (earlyCheck.secure()) {
+            verifiedPremiumSessions.add(player.getUniqueId());
+            messageSuppressor.mark(player);
+        }
+    }
+
+    private void clearPremiumMessageSuppression(Player player) {
+        verifiedPremiumSessions.remove(player.getUniqueId());
+        if (suppressionAvailable) {
+            messageSuppressor.clear(player);
         }
     }
 
