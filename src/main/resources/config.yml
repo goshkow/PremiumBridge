@@ -33,8 +33,9 @@ auth-plugin:
 
 authme:
   # Delay before PremiumBridge starts its premium auto-login flow after player join.
+  # 1 tick lets AuthMe/OpeNLogin and other join handlers finish their first pass.
   # Measured in ticks. 20 ticks = 1 second.
-  auto-login-delay-ticks: 10
+  auto-login-delay-ticks: 1
 
   # If true, use "authme forcelogin" from console instead of only relying on the AuthMe API.
   # This often works better with AuthMe's internal freeze/session logic.

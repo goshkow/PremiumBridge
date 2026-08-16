@@ -16,7 +16,10 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -51,6 +54,8 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     private final Map<UUID, MigrationPreview> pendingMigrationChoices = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> recentMigrationApplied = new ConcurrentHashMap<>();
     private final Map<UUID, Long> movementRepairUntil = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> locationRestoreUntil = new ConcurrentHashMap<>();
+    private final Set<UUID> movedAfterAuthentication = ConcurrentHashMap.newKeySet();
     private final Set<UUID> verifiedPremiumSessions = ConcurrentHashMap.newKeySet();
     private boolean authPluginAvailable;
     private boolean suppressionAvailable;
@@ -121,6 +126,13 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         getLogger().info("PremiumBridge disabled.");
     }
 
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onLogin(PlayerLoginEvent event) {
+        if (authPluginAvailable) {
+            captureInitialRestoreState(event.getPlayer());
+        }
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         if (updateCheckerService != null) {
@@ -137,16 +149,17 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
         Player player = event.getPlayer();
         recentMigrationApplied.put(player.getUniqueId(), playerStore.consumeRecentMigrationApplied(player.getName()));
-        restoreStates.put(player.getUniqueId(), new PlayerRestoreState(
+        restoreStates.putIfAbsent(player.getUniqueId(), new PlayerRestoreState(
             player.getLocation().clone(),
             player.getWalkSpeed(),
             player.getFlySpeed(),
             player.getAllowFlight(),
             player.isFlying(),
-            player.getGameMode()
+            player.getGameMode(),
+            player.isOp()
         ));
         movementRepairUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
-        int delayTicks = getConfig().getInt("authme.auto-login-delay-ticks", 10);
+        int delayTicks = Math.max(1, getConfig().getInt("authme.auto-login-delay-ticks", 1));
 
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> handleJoin(player, 0), delayTicks);
     }
@@ -176,7 +189,26 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         pendingMigrationChoices.remove(event.getPlayer().getUniqueId());
         recentMigrationApplied.remove(event.getPlayer().getUniqueId());
         movementRepairUntil.remove(event.getPlayer().getUniqueId());
+        locationRestoreUntil.remove(event.getPlayer().getUniqueId());
+        movedAfterAuthentication.remove(event.getPlayer().getUniqueId());
         verifiedPremiumSessions.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerMove(PlayerMoveEvent event) {
+        if (event instanceof PlayerTeleportEvent) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        Long restoreUntil = locationRestoreUntil.get(player.getUniqueId());
+        if (restoreUntil == null || restoreUntil <= System.currentTimeMillis()) {
+            return;
+        }
+
+        if (event.getTo() != null && event.getFrom().distanceSquared(event.getTo()) > 0.0025D) {
+            movedAfterAuthentication.add(player.getUniqueId());
+        }
     }
 
     private void handleJoin(Player player, int velocityAttempt) {
@@ -407,6 +439,8 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
     private void restorePostAuthState(Player player) {
         movementRepairUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
+        locationRestoreUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
+        movedAfterAuthentication.remove(player.getUniqueId());
         if (suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
             messageSuppressor.mark(player);
         }
@@ -419,14 +453,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
             PlayerRestoreState restoreState = restoreStates.get(player.getUniqueId());
             if (restoreState != null) {
-                boolean migratedThisJoin = recentMigrationApplied.getOrDefault(player.getUniqueId(), false);
-                if (migratedThisJoin) {
-                    player.setWalkSpeed((float) getConfig().getDouble("authme.restore-walk-speed", 0.2D));
-                    player.setFlySpeed((float) getConfig().getDouble("authme.restore-fly-speed", 0.1D));
-                } else if (getConfig().getBoolean("migration.offline-data.restore-join-location", true)) {
-                    player.teleport(restoreState.location());
-                }
-
+                restoreLocationIfSafe(player, restoreState);
                 restoreMovementState(player, restoreState);
             }
             restoreBrokenMovementSpeed(player);
@@ -442,11 +469,50 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
                 PlayerRestoreState restoreState = restoreStates.get(player.getUniqueId());
                 if (restoreState != null) {
+                    restoreLocationIfSafe(player, restoreState);
                     restoreMovementState(player, restoreState);
                 }
                 restoreBrokenMovementSpeed(player);
             }, retryDelay);
         }
+    }
+
+    private void captureInitialRestoreState(Player player) {
+        restoreStates.putIfAbsent(player.getUniqueId(), new PlayerRestoreState(
+            player.getLocation().clone(),
+            player.getWalkSpeed(),
+            player.getFlySpeed(),
+            player.getAllowFlight(),
+            player.isFlying(),
+            player.getGameMode(),
+            player.isOp()
+        ));
+    }
+
+    private void restoreLocationIfSafe(Player player, PlayerRestoreState restoreState) {
+        if (!getConfig().getBoolean("migration.offline-data.restore-join-location", true)) {
+            return;
+        }
+
+        Long restoreUntil = locationRestoreUntil.get(player.getUniqueId());
+        if (restoreUntil == null || restoreUntil <= System.currentTimeMillis()
+            || movedAfterAuthentication.contains(player.getUniqueId())) {
+            return;
+        }
+
+        if (!sameLocation(player.getLocation(), restoreState.location())) {
+            player.teleport(restoreState.location());
+        }
+    }
+
+    private boolean sameLocation(org.bukkit.Location first, org.bukkit.Location second) {
+        if (first == null || second == null || first.getWorld() != second.getWorld()) {
+            return false;
+        }
+
+        return first.distanceSquared(second) <= 0.01D
+            && Math.abs(first.getYaw() - second.getYaw()) <= 2.0F
+            && Math.abs(first.getPitch() - second.getPitch()) <= 2.0F;
     }
 
     private void restoreMovementState(Player player, PlayerRestoreState restoreState) {
@@ -468,6 +534,12 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
         player.setWalkSpeed(sanitizeSpeed(walkSpeed, 0.2F));
         player.setFlySpeed(sanitizeSpeed(flySpeed, 0.1F));
+        if (player.getGameMode() != restoreState.gameMode()) {
+            player.setGameMode(restoreState.gameMode());
+        }
+        if (player.isOp() != restoreState.operator()) {
+            player.setOp(restoreState.operator());
+        }
         player.setAllowFlight(restoreState.allowFlight() || restoreState.gameMode() == org.bukkit.GameMode.CREATIVE || restoreState.gameMode() == org.bukkit.GameMode.SPECTATOR);
 
         if (player.getAllowFlight()) {

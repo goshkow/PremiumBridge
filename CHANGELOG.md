@@ -9,6 +9,8 @@
 - combined GitHub and Modrinth update links into one notification
 - limited authenticated movement-speed repair to the first five seconds after each join
 - kept OpeNLogin auto-login on its silent API path without sending login commands to chat
+- captured the original location before AuthMe/OpeNLogin join processing and restored it after login
+- added delayed post-login checks for teleports, game mode, operator status, flight and movement state
 
 ## 1.0.4
 

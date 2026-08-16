@@ -9,6 +9,7 @@ record PlayerRestoreState(
     float flySpeed,
     boolean allowFlight,
     boolean flying,
-    GameMode gameMode
+    GameMode gameMode,
+    boolean operator
 ) {
 }
