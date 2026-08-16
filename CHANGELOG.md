@@ -2,17 +2,13 @@
 
 ## 1.0.4
 
-- fixed invalid `0,0,0` restore locations caused by the early login event
-- captured the player location before AuthMe/OpeNLogin join processing at the correct event priority
-- added validation to prevent teleporting to invalid restore coordinates
-- added a one-tick delay before premium auto-login
-- restored the original position after auth-plugin spawn teleports
-- added delayed restoration for game mode, operator status, flight and movement state
-- stopped location correction when the player begins moving normally
-- fixed movement speed restoration for manual AuthMe/OpeNLogin login and premium auto-login
-- added append-only language updates for missing notification fields
-- combined GitHub and Modrinth update links into one notification
-- kept the Velocity companion at its independent version 1.0.3
+- added automatic restoration of a player's previous location after AuthMe or OpeNLogin teleports them during authentication
+- added post-login restoration of walk speed, fly speed, flight state, game mode and operator status
+- improved the login sequence so authentication plugins can finish their join processing before PremiumBridge logs a player in
+- added automatic update checks through GitHub and Modrinth
+- added append-only localization updates that preserve existing translations and add only missing fields
+- combined GitHub and Modrinth update notifications into one message
+- kept the Velocity companion on its independent version 1.0.3
 
 ## 1.0.3
 
