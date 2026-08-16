@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -49,6 +51,7 @@ public final class LanguageManager {
         }
 
         bundledEnglish = loadBundledEnglish();
+        appendMissingUpdateFields(languagesFolder);
         reload();
     }
 
@@ -155,6 +158,126 @@ public final class LanguageManager {
             plugin.getLogger().warning("Could not load bundled English language fallback: " + exception.getMessage());
             return new YamlConfiguration();
         }
+    }
+
+    /**
+     * Adds new update keys without replacing any existing language text or comments.
+     * Existing server files are intentionally never overwritten.
+     */
+    private void appendMissingUpdateFields(File languagesFolder) {
+        if (bundledEnglish == null) {
+            return;
+        }
+
+        var defaults = bundledEnglish.getConfigurationSection("update");
+        if (defaults == null) {
+            return;
+        }
+
+        File[] files = languagesFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            appendMissingUpdateFields(file.toPath(), defaults);
+        }
+    }
+
+    private void appendMissingUpdateFields(Path file, org.bukkit.configuration.ConfigurationSection defaults) {
+        try {
+            String content = Files.readString(file, StandardCharsets.UTF_8);
+            YamlConfiguration existing = YamlConfiguration.loadConfiguration(file.toFile());
+            var existingUpdate = existing.getConfigurationSection("update");
+            String newline = content.contains("\r\n") ? "\r\n" : "\n";
+            StringBuilder additions = new StringBuilder();
+
+            for (String key : defaults.getKeys(false)) {
+                String path = "update." + key;
+                if (existingUpdate != null && existingUpdate.contains(key)) {
+                    continue;
+                }
+
+                String value = defaults.getString(key);
+                if (value == null) {
+                    continue;
+                }
+                additions.append("  ").append(key).append(": \"")
+                    .append(escapeYaml(value)).append("\"")
+                    .append(newline);
+            }
+
+            if (additions.isEmpty()) {
+                return;
+            }
+
+            int sectionStart = findTopLevelSectionStart(content, "update");
+            if (sectionStart < 0) {
+                StringBuilder updated = new StringBuilder(content);
+                if (!content.isEmpty() && !content.endsWith("\n") && !content.endsWith("\r")) {
+                    updated.append(newline);
+                }
+                updated.append(newline).append("update:").append(newline).append(additions);
+                Files.writeString(file, updated.toString(), StandardCharsets.UTF_8);
+                return;
+            }
+
+            int sectionEnd = findNextTopLevelSection(content, sectionStart);
+            if (sectionEnd < 0) {
+                sectionEnd = content.length();
+            }
+
+            StringBuilder updated = new StringBuilder(content);
+            if (sectionEnd > 0 && updated.charAt(sectionEnd - 1) != '\n' && updated.charAt(sectionEnd - 1) != '\r') {
+                updated.insert(sectionEnd, newline);
+                sectionEnd += newline.length();
+            }
+            updated.insert(sectionEnd, additions.toString());
+            Files.writeString(file, updated.toString(), StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Could not add missing language fields to " + file.getFileName() + ": " + exception.getMessage());
+        }
+    }
+
+    private int findTopLevelSectionStart(String content, String section) {
+        String marker = section + ":";
+        int position = 0;
+        while (position < content.length()) {
+            int lineEnd = content.indexOf('\n', position);
+            if (lineEnd < 0) {
+                lineEnd = content.length();
+            }
+            String line = content.substring(position, lineEnd).replace("\r", "");
+            if (line.startsWith(marker) && (line.length() == marker.length() || Character.isWhitespace(line.charAt(marker.length())))) {
+                return position;
+            }
+            position = lineEnd + 1;
+        }
+        return -1;
+    }
+
+    private int findNextTopLevelSection(String content, int sectionStart) {
+        int position = content.indexOf('\n', sectionStart);
+        if (position < 0) {
+            return -1;
+        }
+        position++;
+        while (position < content.length()) {
+            int lineEnd = content.indexOf('\n', position);
+            if (lineEnd < 0) {
+                lineEnd = content.length();
+            }
+            String line = content.substring(position, lineEnd).replace("\r", "");
+            if (!line.isBlank() && !Character.isWhitespace(line.charAt(0)) && !line.startsWith("#") && line.contains(":")) {
+                return position;
+            }
+            position = lineEnd + 1;
+        }
+        return -1;
+    }
+
+    private String escapeYaml(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String normalizeLocale(String locale) {

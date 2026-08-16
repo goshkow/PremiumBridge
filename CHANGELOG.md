@@ -1,17 +1,14 @@
 # Changelog
 
-## 1.0.6
-
-- fixed missing update messages when an existing language file has not been updated yet
-- combined GitHub and Modrinth update links into one notification
-- limited authenticated movement-speed repair to the first five seconds after each join
-- kept OpeNLogin auto-login on its silent API path without sending login commands to chat
-
 ## 1.0.5
 
 - fixed movement speed restoration for players who log in manually through AuthMe or OpeNLogin
 - added a periodic safety repair for authenticated players whose walk or fly speed is zero or abnormally low
 - kept automatic-login movement recovery and the configured vanilla speed thresholds
+- added append-only language updates for missing notification fields
+- combined GitHub and Modrinth update links into one notification
+- limited authenticated movement-speed repair to the first five seconds after each join
+- kept OpeNLogin auto-login on its silent API path without sending login commands to chat
 
 ## 1.0.4
 
