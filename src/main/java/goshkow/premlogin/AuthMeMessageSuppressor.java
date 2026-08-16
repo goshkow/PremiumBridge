@@ -27,6 +27,16 @@ import java.util.stream.Collectors;
 
 final class AuthMeMessageSuppressor {
 
+    private static final List<String> BUILT_IN_PATTERNS = List.of(
+        "\\bавториз",
+        "\\bавторизац",
+        "\\bаутентифиц",
+        "\\bauthori[sz]",
+        "\\bautoriza",
+        "\\bautoryz",
+        "\\bautentific"
+    );
+
     private final PremiumLoginPlugin plugin;
     private final Map<UUID, Long> suppressionUntil = new ConcurrentHashMap<>();
     private final Set<String> normalizedAuthMeMessages = new ConcurrentSkipListSet<>();
@@ -52,7 +62,8 @@ final class AuthMeMessageSuppressor {
             PacketType.Play.Server.SYSTEM_CHAT,
             PacketType.Play.Server.CHAT,
             PacketType.Play.Server.DISGUISED_CHAT,
-            PacketType.Play.Server.SET_ACTION_BAR_TEXT
+            PacketType.Play.Server.SET_ACTION_BAR_TEXT,
+            PacketType.Play.Server.SET_TITLE_TEXT
         ) {
             @Override
             public void onPacketSending(PacketEvent event) {
@@ -79,7 +90,11 @@ final class AuthMeMessageSuppressor {
     }
 
     void reloadPatterns() {
-        patterns = plugin.getConfig().getStringList("message-suppression.patterns").stream()
+        List<String> configuredPatterns = new ArrayList<>(
+            plugin.getConfig().getStringList("message-suppression.patterns")
+        );
+        configuredPatterns.addAll(BUILT_IN_PATTERNS);
+        patterns = configuredPatterns.stream()
             .map(pattern -> Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE))
             .collect(Collectors.toList());
     }
@@ -109,7 +124,7 @@ final class AuthMeMessageSuppressor {
 
         for (File file : files) {
             YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-            collectStrings(yaml, "");
+            collectStrings(yaml, "", true);
         }
     }
 
@@ -123,7 +138,7 @@ final class AuthMeMessageSuppressor {
         collectYamlFiles(openLogin.getDataFolder(), files);
         for (File file : files) {
             YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-            collectStrings(yaml, "");
+            collectStrings(yaml, "", false);
         }
     }
 
@@ -237,12 +252,12 @@ final class AuthMeMessageSuppressor {
             .trim();
     }
 
-    private void collectStrings(ConfigurationSection section, String path) {
+    private void collectStrings(ConfigurationSection section, String path, boolean collectAllStrings) {
         for (String key : section.getKeys(false)) {
             String childPath = path.isEmpty() ? key : path + "." + key;
             Object value = section.get(key);
             if (value instanceof ConfigurationSection childSection) {
-                collectStrings(childSection, childPath);
+                collectStrings(childSection, childPath, collectAllStrings);
                 continue;
             }
 
@@ -250,7 +265,7 @@ final class AuthMeMessageSuppressor {
                 continue;
             }
 
-            if (!shouldTrackKey(childPath)) {
+            if (!collectAllStrings && !shouldTrackKey(childPath)) {
                 continue;
             }
 

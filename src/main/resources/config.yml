@@ -192,3 +192,11 @@ message-suppression:
     - "please\\s+register"
     - "register\\s+success"
     - "login\\s+success"
+    # Common localized authentication confirmations. These are applied only to verified premium sessions.
+    - "авториз"
+    - "авторизац"
+    - "аутентифиц"
+    - "authori[sz]"
+    - "autoriza"
+    - "autoryz"
+    - "autentific"
