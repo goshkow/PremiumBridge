@@ -2,7 +2,7 @@
 
 # PremiumBridge
 
-PremiumBridge is a premium session manager for offline-mode Minecraft Java servers. Version 1.0.3 supports Minecraft Java 1.21.9-1.21.11, 26.1.x, and 26.2 with one backend JAR.
+PremiumBridge is a premium session manager for offline-mode Minecraft Java servers. Version 1.0.4 supports Minecraft Java 1.21.9-1.21.11, 26.1.x, and 26.2 with one backend JAR.
 
 ## Features
 

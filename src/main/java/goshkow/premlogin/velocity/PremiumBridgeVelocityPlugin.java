@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 @Plugin(
     id = "premiumbridge",
     name = "PremiumBridge",
-    version = "1.0.3"
+    version = "1.0.4"
 )
 public final class PremiumBridgeVelocityPlugin {
 

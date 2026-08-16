@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.4
+
+- added automatic update checks for GitHub and Modrinth
+- added configurable update-check interval and admin-only notifications
+- repaired movement speed after AuthMe/OpeNLogin login and premium auto-login
+- added repeated speed safeguards that restore vanilla walk and fly speed when values are zero or abnormally low
+- kept the Velocity companion compatible with modern forwarding
+
 ## 1.0.3
 
 - added an optional Velocity companion for modern forwarding

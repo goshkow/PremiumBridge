@@ -2,7 +2,7 @@
 
 # PremiumBridge
 
-PremiumBridge — это менеджер premium-сессий для оффлайн-серверов Minecraft Java. Версия 1.0.3 поддерживает Minecraft Java 1.21.9-1.21.11, 26.1.x и 26.2 одним backend-JAR.
+PremiumBridge — это менеджер premium-сессий для оффлайн-серверов Minecraft Java. Версия 1.0.4 поддерживает Minecraft Java 1.21.9-1.21.11, 26.1.x и 26.2 одним backend-JAR.
 
 ## Возможности
 
