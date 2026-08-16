@@ -1,40 +1,18 @@
 # Changelog
 
-## 1.0.7
+## 1.0.4
 
 - fixed invalid `0,0,0` restore locations caused by the early login event
-- captured the player location before AuthMe join processing at the correct event priority
-- added validation to prevent teleporting to invalid or unloaded-state coordinates
-- kept the Velocity companion at its independent version 1.0.3
-
-## 1.0.6
-
-- added early player-state capture before AuthMe/OpeNLogin join processing
+- captured the player location before AuthMe/OpeNLogin join processing at the correct event priority
+- added validation to prevent teleporting to invalid restore coordinates
 - added a one-tick delay before premium auto-login
 - restored the original position after auth-plugin spawn teleports
 - added delayed restoration for game mode, operator status, flight and movement state
 - stopped location correction when the player begins moving normally
-- kept the unchanged Velocity companion on its latest functional version, 1.0.3
-
-## 1.0.5
-
-- fixed movement speed restoration for players who log in manually through AuthMe or OpeNLogin
-- added a periodic safety repair for authenticated players whose walk or fly speed is zero or abnormally low
-- kept automatic-login movement recovery and the configured vanilla speed thresholds
+- fixed movement speed restoration for manual AuthMe/OpeNLogin login and premium auto-login
 - added append-only language updates for missing notification fields
 - combined GitHub and Modrinth update links into one notification
-- limited authenticated movement-speed repair to the first five seconds after each join
-- kept OpeNLogin auto-login on its silent API path without sending login commands to chat
-- captured the original location before AuthMe/OpeNLogin join processing and restored it after login
-- added delayed post-login checks for teleports, game mode, operator status, flight and movement state
-
-## 1.0.4
-
-- added automatic update checks for GitHub and Modrinth
-- added configurable update-check interval and admin-only notifications
-- repaired movement speed after AuthMe/OpeNLogin login and premium auto-login
-- added repeated speed safeguards that restore vanilla walk and fly speed when values are zero or abnormally low
-- kept the Velocity companion compatible with modern forwarding
+- kept the Velocity companion at its independent version 1.0.3
 
 ## 1.0.3
 
