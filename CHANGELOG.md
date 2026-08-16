@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.7
+
+- fixed invalid `0,0,0` restore locations caused by the early login event
+- captured the player location before AuthMe join processing at the correct event priority
+- added validation to prevent teleporting to invalid or unloaded-state coordinates
+- kept the Velocity companion at its independent version 1.0.3
+
 ## 1.0.6
 
 - added early player-state capture before AuthMe/OpeNLogin join processing

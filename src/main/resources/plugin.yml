@@ -1,5 +1,5 @@
 name: PremiumBridge
-version: '1.0.6'
+version: '1.0.7'
 main: goshkow.premlogin.PremiumLoginPlugin
 # Keep the minimum API here: newer Paper/Purpur releases remain backward-compatible
 # with plugins targeting an older API, while a newer value would reject 1.21.x servers.

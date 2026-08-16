@@ -16,7 +16,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -127,13 +126,6 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onLogin(PlayerLoginEvent event) {
-        if (authPluginAvailable) {
-            captureInitialRestoreState(event.getPlayer());
-        }
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         if (updateCheckerService != null) {
             Bukkit.getScheduler().runTaskLater(this, () -> {
@@ -148,16 +140,8 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
 
         Player player = event.getPlayer();
+        captureInitialRestoreState(player);
         recentMigrationApplied.put(player.getUniqueId(), playerStore.consumeRecentMigrationApplied(player.getName()));
-        restoreStates.putIfAbsent(player.getUniqueId(), new PlayerRestoreState(
-            player.getLocation().clone(),
-            player.getWalkSpeed(),
-            player.getFlySpeed(),
-            player.getAllowFlight(),
-            player.isFlying(),
-            player.getGameMode(),
-            player.isOp()
-        ));
         movementRepairUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
         int delayTicks = Math.max(1, getConfig().getInt("authme.auto-login-delay-ticks", 1));
 
@@ -478,7 +462,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     }
 
     private void captureInitialRestoreState(Player player) {
-        restoreStates.putIfAbsent(player.getUniqueId(), new PlayerRestoreState(
+        PlayerRestoreState state = new PlayerRestoreState(
             player.getLocation().clone(),
             player.getWalkSpeed(),
             player.getFlySpeed(),
@@ -486,7 +470,12 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             player.isFlying(),
             player.getGameMode(),
             player.isOp()
-        ));
+        );
+        if (isUsableLocation(state.location())) {
+            restoreStates.put(player.getUniqueId(), state);
+        } else {
+            debugMessage("Ignored an invalid join location for " + player.getName());
+        }
     }
 
     private void restoreLocationIfSafe(Player player, PlayerRestoreState restoreState) {
@@ -500,9 +489,26 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             return;
         }
 
+        if (!isUsableLocation(restoreState.location())) {
+            debugMessage("Skipped an invalid restore location for " + player.getName());
+            return;
+        }
+
         if (!sameLocation(player.getLocation(), restoreState.location())) {
             player.teleport(restoreState.location());
         }
+    }
+
+    private boolean isUsableLocation(org.bukkit.Location location) {
+        if (location == null || location.getWorld() == null) {
+            return false;
+        }
+
+        return Double.isFinite(location.getX())
+            && Double.isFinite(location.getY())
+            && Double.isFinite(location.getZ())
+            && location.getY() >= location.getWorld().getMinHeight()
+            && location.getY() <= location.getWorld().getMaxHeight() + 1.0D;
     }
 
     private boolean sameLocation(org.bukkit.Location first, org.bukkit.Location second) {
