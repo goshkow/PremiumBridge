@@ -49,6 +49,7 @@ PremiumBridge is a premium session manager for offline-mode Minecraft Java serve
 PremiumBridge supports Velocity but does not require it.
 
 1. Put `PremiumBridge_Velocity_Companion.jar` into `Velocity/plugins/`.
+   The companion has its own independent version and remains at `1.0.3` while the backend is updated separately.
 2. Put `PremiumBridge.jar` into the `plugins/` folder of every Paper or Purpur backend.
 3. In `velocity.toml`, enable `online-mode = false` and `player-info-forwarding-mode = "modern"`.
 4. Enable native Velocity forwarding in `config/paper-global.yml` and use the same `forwarding.secret`.
