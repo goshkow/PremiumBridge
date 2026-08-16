@@ -126,6 +126,10 @@ final class AuthMeMessageSuppressor {
     }
 
     void mark(Player player) {
+        if (!plugin.isVerifiedPremiumSession(player)) {
+            return;
+        }
+
         long durationMillis = plugin.getConfig().getLong("message-suppression.window-millis", 30000L);
         suppressionUntil.put(player.getUniqueId(), System.currentTimeMillis() + durationMillis);
     }
@@ -135,6 +139,11 @@ final class AuthMeMessageSuppressor {
     }
 
     private boolean shouldSuppress(Player player) {
+        if (!plugin.isVerifiedPremiumSession(player)) {
+            suppressionUntil.remove(player.getUniqueId());
+            return false;
+        }
+
         Long until = suppressionUntil.get(player.getUniqueId());
         if (until == null) {
             return false;

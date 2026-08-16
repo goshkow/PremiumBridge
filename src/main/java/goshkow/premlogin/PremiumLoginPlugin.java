@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,6 +47,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     private final Map<UUID, PlayerRestoreState> restoreStates = new ConcurrentHashMap<>();
     private final Map<UUID, MigrationPreview> pendingMigrationChoices = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> recentMigrationApplied = new ConcurrentHashMap<>();
+    private final Set<UUID> verifiedPremiumSessions = ConcurrentHashMap.newKeySet();
     private boolean authPluginAvailable;
     private boolean suppressionAvailable;
 
@@ -90,6 +92,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
     @Override
     public void onDisable() {
+        verifiedPremiumSessions.clear();
         if (velocityModernBridge != null) {
             velocityModernBridge.close();
         }
@@ -144,6 +147,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         restoreStates.remove(event.getPlayer().getUniqueId());
         pendingMigrationChoices.remove(event.getPlayer().getUniqueId());
         recentMigrationApplied.remove(event.getPlayer().getUniqueId());
+        verifiedPremiumSessions.remove(event.getPlayer().getUniqueId());
     }
 
     private void handleJoin(Player player, int velocityAttempt) {
@@ -193,7 +197,10 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
 
         if (premiumCheck.secure()) {
+            verifiedPremiumSessions.add(player.getUniqueId());
             playerStore.rememberPremiumProfile(player.getName(), player.getUniqueId());
+        } else {
+            verifiedPremiumSessions.remove(player.getUniqueId());
         }
 
         addHeadPermissionService.apply(player);
@@ -529,6 +536,10 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
     boolean hidesAuthMessagesForPremium() {
         return getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true);
+    }
+
+    boolean isVerifiedPremiumSession(Player player) {
+        return player != null && verifiedPremiumSessions.contains(player.getUniqueId());
     }
 
     boolean isPremiumNameProtectionEnabled() {
