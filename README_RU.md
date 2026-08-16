@@ -47,7 +47,7 @@ PremiumBridge — это менеджер premium-сессий для оффла
 
 PremiumBridge поддерживает Velocity, но не требует его.
 
-1. Положи `PremiumBridge-Velocity-Companion.jar` в `Velocity/plugins/`.
+1. Положи `PremiumBridge_Velocity_Companion.jar` в `Velocity/plugins/`.
 2. Положи `PremiumBridge.jar` в папку `plugins/` каждого Paper или Purpur backend-сервера.
 3. В `velocity.toml` включи `online-mode = false` и `player-info-forwarding-mode = "modern"`.
 4. Включи native Velocity forwarding в `config/paper-global.yml` и укажи тот же `forwarding.secret`.
