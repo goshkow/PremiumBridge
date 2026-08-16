@@ -42,6 +42,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     private OfflineDataMigrationService offlineDataMigrationService;
     private AddHeadPermissionService addHeadPermissionService;
     private VelocityModernBridge velocityModernBridge;
+    private UpdateCheckerService updateCheckerService;
     private PremiumBridgeApi api;
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<UUID, PlayerRestoreState> restoreStates = new ConcurrentHashMap<>();
@@ -79,6 +80,8 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         suppressionAvailable = messageSuppressor.initialize();
         api = new PremiumBridgeApiImpl(this);
         getServer().getServicesManager().register(PremiumBridgeApi.class, api, this, ServicePriority.Normal);
+        updateCheckerService = new UpdateCheckerService(this);
+        updateCheckerService.start();
 
         getServer().getPluginManager().registerEvents(this, this);
 
@@ -96,6 +99,9 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         if (velocityModernBridge != null) {
             velocityModernBridge.close();
         }
+        if (updateCheckerService != null) {
+            updateCheckerService.stop();
+        }
         if (api != null) {
             getServer().getServicesManager().unregister(PremiumBridgeApi.class, api);
         }
@@ -104,6 +110,14 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
+        if (updateCheckerService != null) {
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                if (event.getPlayer().isOnline()) {
+                    updateCheckerService.notifyPlayerIfPending(event.getPlayer());
+                }
+            }, 40L);
+        }
+
         if (!authPluginAvailable) {
             return;
         }
@@ -399,9 +413,10 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
                 restoreMovementState(player, restoreState);
             }
+            restoreBrokenMovementSpeed(player);
         }, delayTicks);
 
-        long safetyRepeats = Math.max(0L, getConfig().getLong("authme.restore-movement-retries", 4L));
+        long safetyRepeats = Math.max(10L, getConfig().getLong("authme.restore-movement-retries", 10L));
         for (long attempt = 1; attempt <= safetyRepeats; attempt++) {
             long retryDelay = delayTicks + attempt * Math.max(1L, getConfig().getLong("authme.restore-movement-interval-ticks", 10L));
             Bukkit.getScheduler().runTaskLater(this, () -> {
@@ -413,6 +428,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
                 if (restoreState != null) {
                     restoreMovementState(player, restoreState);
                 }
+                restoreBrokenMovementSpeed(player);
             }, retryDelay);
         }
     }
@@ -434,13 +450,39 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
                 : (float) getConfig().getDouble("authme.restore-fly-speed", restoreState.flySpeed());
         }
 
-        player.setWalkSpeed(walkSpeed == 0.0F ? 0.2F : walkSpeed);
-        player.setFlySpeed(flySpeed == 0.0F ? 0.1F : flySpeed);
+        player.setWalkSpeed(sanitizeSpeed(walkSpeed, 0.2F));
+        player.setFlySpeed(sanitizeSpeed(flySpeed, 0.1F));
         player.setAllowFlight(restoreState.allowFlight() || restoreState.gameMode() == org.bukkit.GameMode.CREATIVE || restoreState.gameMode() == org.bukkit.GameMode.SPECTATOR);
 
         if (player.getAllowFlight()) {
             player.setFlying(restoreState.flying());
         }
+    }
+
+    private void restoreBrokenMovementSpeed(Player player) {
+        float minimumWalkSpeed = sanitizeThreshold(getConfig().getDouble("authme.minimum-walk-speed", 0.01D), 0.01F);
+        float minimumFlySpeed = sanitizeThreshold(getConfig().getDouble("authme.minimum-fly-speed", 0.01D), 0.01F);
+
+        if (!Float.isFinite(player.getWalkSpeed()) || player.getWalkSpeed() <= minimumWalkSpeed) {
+            player.setWalkSpeed(sanitizeSpeed((float) getConfig().getDouble("authme.restore-walk-speed", 0.2D), 0.2F));
+        }
+        if (!Float.isFinite(player.getFlySpeed()) || player.getFlySpeed() <= minimumFlySpeed) {
+            player.setFlySpeed(sanitizeSpeed((float) getConfig().getDouble("authme.restore-fly-speed", 0.1D), 0.1F));
+        }
+    }
+
+    private float sanitizeSpeed(float value, float fallback) {
+        if (!Float.isFinite(value) || value <= 0.0F) {
+            return fallback;
+        }
+        return Math.min(1.0F, value);
+    }
+
+    private float sanitizeThreshold(double value, float fallback) {
+        if (!Double.isFinite(value) || value < 0.0D) {
+            return fallback;
+        }
+        return Math.min(1.0F, (float) value);
     }
 
     @Override
@@ -462,6 +504,9 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             if (suppressionAvailable) {
                 messageSuppressor.reloadPatterns();
                 messageSuppressor.reloadKnownPluginMessages();
+            }
+            if (updateCheckerService != null) {
+                updateCheckerService.restart();
             }
             sender.sendMessage(languageManager.text(sender, "command.reload-success", Map.of("label", label)));
             return true;
@@ -548,6 +593,15 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
 
     public LanguageManager getLanguageManager() {
         return languageManager;
+    }
+
+    public long getUpdateCheckIntervalTicks() {
+        long hours = Math.max(1L, getConfig().getLong("update-check.interval-hours", 6L));
+        return hours * 60L * 60L * 20L;
+    }
+
+    boolean shouldReceiveUpdateNotifications(Player player) {
+        return player != null && (player.isOp() || player.hasPermission("premauthbridge.reload"));
     }
 
     MigrationMode getMigrationMode() {

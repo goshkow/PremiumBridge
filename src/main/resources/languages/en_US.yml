@@ -4,6 +4,12 @@ command:
   reload-success: "{prefix}Configuration reloaded."
   usage: "{prefix}Usage: /{label} reload"
 
+update:
+  available: "{prefix}&eA new PremiumBridge version is available: &f{latest} &7(current: {current})."
+  github: "&7GitHub release: &b{version}"
+  modrinth: "&7Modrinth release: &b{version}"
+  open-link: "&7Open the release page."
+
 migration:
   prompt:
     line-1: "{prefix}You are joining with a premium account for the first time."

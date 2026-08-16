@@ -3,6 +3,13 @@
 # false - keep console output clean
 debug: false
 
+update-check:
+  # Enables periodic checks for newer PremiumBridge releases on GitHub and Modrinth.
+  enabled: true
+
+  # How often to check for updates. The first check runs shortly after startup.
+  interval-hours: 6
+
 language:
   # Default plugin language when auto-detection is disabled or no matching locale file exists.
   # Examples: en_US, ru_RU, de_DE, fr_FR, pl_PL, uk_UA, es_ES, it_IT
@@ -38,10 +45,15 @@ authme:
 
   # How many extra movement restoration attempts should be made after auto-login.
   # Helps when an auth plugin leaves player speed at 0 or keeps movement blocked for a moment.
-  restore-movement-retries: 4
+  restore-movement-retries: 10
 
   # Delay between repeated movement restoration attempts.
   restore-movement-interval-ticks: 10
+
+  # Any value at or below this threshold is treated as a broken auth-plugin speed.
+  # Vanilla defaults are 0.2 for walking and 0.1 for flying.
+  minimum-walk-speed: 0.01
+  minimum-fly-speed: 0.01
 
   # Fallback walk speed to restore after login.
   # Vanilla default is 0.2
