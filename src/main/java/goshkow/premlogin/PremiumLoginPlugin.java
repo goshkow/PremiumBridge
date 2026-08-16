@@ -50,6 +50,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     private final Map<UUID, PlayerRestoreState> restoreStates = new ConcurrentHashMap<>();
     private final Map<UUID, MigrationPreview> pendingMigrationChoices = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> recentMigrationApplied = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> movementRepairUntil = new ConcurrentHashMap<>();
     private final Set<UUID> verifiedPremiumSessions = ConcurrentHashMap.newKeySet();
     private boolean authPluginAvailable;
     private boolean suppressionAvailable;
@@ -144,6 +145,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             player.isFlying(),
             player.getGameMode()
         ));
+        movementRepairUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
         int delayTicks = getConfig().getInt("authme.auto-login-delay-ticks", 10);
 
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> handleJoin(player, 0), delayTicks);
@@ -173,6 +175,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         restoreStates.remove(event.getPlayer().getUniqueId());
         pendingMigrationChoices.remove(event.getPlayer().getUniqueId());
         recentMigrationApplied.remove(event.getPlayer().getUniqueId());
+        movementRepairUntil.remove(event.getPlayer().getUniqueId());
         verifiedPremiumSessions.remove(event.getPlayer().getUniqueId());
     }
 
@@ -403,6 +406,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     }
 
     private void restorePostAuthState(Player player) {
+        movementRepairUntil.put(player.getUniqueId(), System.currentTimeMillis() + 5000L);
         if (suppressionAvailable && getConfig().getBoolean("auth-plugin.hide-service-messages-for-premium", true)) {
             messageSuppressor.mark(player);
         }
@@ -488,7 +492,14 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
             return;
         }
 
+        long now = System.currentTimeMillis();
+        movementRepairUntil.entrySet().removeIf(entry -> entry.getValue() <= now);
         for (Player player : Bukkit.getOnlinePlayers()) {
+            Long repairUntil = movementRepairUntil.get(player.getUniqueId());
+            if (repairUntil == null || repairUntil <= now) {
+                continue;
+            }
+
             try {
                 if (authPluginBridge.isAuthenticated(player)) {
                     restoreBrokenMovementSpeed(player);

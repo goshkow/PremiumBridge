@@ -88,12 +88,19 @@ public final class UpdateCheckerService {
         );
         player.sendMessage(plugin.getLanguageManager().component(player, "update.available", placeholders));
 
+        Component sources = plugin.getLanguageManager().component(player, "update.sources");
+        boolean hasSource = false;
         if (state.github() != null) {
-            player.sendMessage(sourceMessage(player, "update.github", state.github()));
+            sources = sources.append(sourceMessage(player, "update.github", state.github()));
+            hasSource = true;
         }
         if (state.modrinth() != null) {
-            player.sendMessage(sourceMessage(player, "update.modrinth", state.modrinth()));
+            if (hasSource) {
+                sources = sources.append(plugin.getLanguageManager().component(player, "update.source-separator"));
+            }
+            sources = sources.append(sourceMessage(player, "update.modrinth", state.modrinth()));
         }
+        player.sendMessage(sources);
     }
 
     private Component sourceMessage(Player player, String key, UpdateCandidate candidate) {

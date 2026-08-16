@@ -6,6 +6,8 @@ command:
 
 update:
   available: "{prefix}&eA new PremiumBridge version is available: &f{latest} &7(current: {current})."
+  sources: "&7Release sources: "
+  source-separator: "&8 | "
   github: "&7GitHub release: &b{version}"
   modrinth: "&7Modrinth release: &b{version}"
   open-link: "&7Open the release page."

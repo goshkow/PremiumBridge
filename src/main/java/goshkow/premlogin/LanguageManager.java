@@ -7,6 +7,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -28,6 +32,7 @@ public final class LanguageManager {
 
     private final PremiumLoginPlugin plugin;
     private final Map<String, YamlConfiguration> loadedLanguages = new ConcurrentHashMap<>();
+    private YamlConfiguration bundledEnglish;
 
     LanguageManager(PremiumLoginPlugin plugin) {
         this.plugin = plugin;
@@ -43,6 +48,7 @@ public final class LanguageManager {
             plugin.saveResource("languages/" + language + ".yml", false);
         }
 
+        bundledEnglish = loadBundledEnglish();
         reload();
     }
 
@@ -126,7 +132,29 @@ public final class LanguageManager {
         }
 
         YamlConfiguration fallback = loadedLanguages.get("en_US");
-        return fallback == null ? null : fallback.getString(key);
+        if (fallback != null) {
+            value = fallback.getString(key);
+            if (value != null) {
+                return value;
+            }
+        }
+
+        return bundledEnglish == null ? null : bundledEnglish.getString(key);
+    }
+
+    private YamlConfiguration loadBundledEnglish() {
+        try (InputStream stream = plugin.getResource("languages/en_US.yml")) {
+            if (stream == null) {
+                return new YamlConfiguration();
+            }
+
+            return YamlConfiguration.loadConfiguration(
+                new InputStreamReader(stream, StandardCharsets.UTF_8)
+            );
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Could not load bundled English language fallback: " + exception.getMessage());
+            return new YamlConfiguration();
+        }
     }
 
     private String normalizeLocale(String locale) {
