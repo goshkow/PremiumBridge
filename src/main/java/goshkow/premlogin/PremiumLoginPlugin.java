@@ -19,6 +19,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.security.SecureRandom;
 import java.util.Collections;
@@ -44,6 +45,7 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
     private VelocityModernBridge velocityModernBridge;
     private UpdateCheckerService updateCheckerService;
     private PremiumBridgeApi api;
+    private BukkitTask authenticatedMovementRepairTask;
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<UUID, PlayerRestoreState> restoreStates = new ConcurrentHashMap<>();
     private final Map<UUID, MigrationPreview> pendingMigrationChoices = new ConcurrentHashMap<>();
@@ -82,6 +84,12 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         getServer().getServicesManager().register(PremiumBridgeApi.class, api, this, ServicePriority.Normal);
         updateCheckerService = new UpdateCheckerService(this);
         updateCheckerService.start();
+        authenticatedMovementRepairTask = Bukkit.getScheduler().runTaskTimer(
+            this,
+            this::repairAuthenticatedPlayersMovement,
+            20L,
+            20L
+        );
 
         getServer().getPluginManager().registerEvents(this, this);
 
@@ -101,6 +109,10 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
         if (updateCheckerService != null) {
             updateCheckerService.stop();
+        }
+        if (authenticatedMovementRepairTask != null) {
+            authenticatedMovementRepairTask.cancel();
+            authenticatedMovementRepairTask = null;
         }
         if (api != null) {
             getServer().getServicesManager().unregister(PremiumBridgeApi.class, api);
@@ -468,6 +480,22 @@ public final class PremiumLoginPlugin extends JavaPlugin implements Listener, Ta
         }
         if (!Float.isFinite(player.getFlySpeed()) || player.getFlySpeed() <= minimumFlySpeed) {
             player.setFlySpeed(sanitizeSpeed((float) getConfig().getDouble("authme.restore-fly-speed", 0.1D), 0.1F));
+        }
+    }
+
+    private void repairAuthenticatedPlayersMovement() {
+        if (!authPluginAvailable || authPluginBridge == null) {
+            return;
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            try {
+                if (authPluginBridge.isAuthenticated(player)) {
+                    restoreBrokenMovementSpeed(player);
+                }
+            } catch (RuntimeException exception) {
+                debugMessage("Could not repair movement speed for " + player.getName() + ": " + exception.getMessage());
+            }
         }
     }
 

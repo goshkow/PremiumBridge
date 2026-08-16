@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+- fixed movement speed restoration for players who log in manually through AuthMe or OpeNLogin
+- added a periodic safety repair for authenticated players whose walk or fly speed is zero or abnormally low
+- kept automatic-login movement recovery and the configured vanilla speed thresholds
+
 ## 1.0.4
 
 - added automatic update checks for GitHub and Modrinth
