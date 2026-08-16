@@ -47,14 +47,14 @@ PremiumBridge — это менеджер premium-сессий для оффла
 
 PremiumBridge поддерживает Velocity, но не требует его.
 
-1. Положи `PremiumBridge-Velocity.jar` в `Velocity/plugins/`.
+1. Положи `PremiumBridge-Velocity-Companion.jar` в `Velocity/plugins/`.
 2. Положи `PremiumBridge.jar` в папку `plugins/` каждого Paper или Purpur backend-сервера.
 3. В `velocity.toml` включи `online-mode = false` и `player-info-forwarding-mode = "modern"`.
 4. Включи native Velocity forwarding в `config/paper-global.yml` и укажи тот же `forwarding.secret`.
 5. Один раз запусти Velocity, скопируй `shared-secret` из `plugins/PremiumBridge/velocity.properties` и укажи его в `premium-verification.velocity-modern.shared-secret` backend-конфига.
 6. Установи `premium-verification.mode: "velocity-modern"` и полностью перезапусти Velocity и backend.
 
-Полная инструкция находится в [VELOCITY_SETUP.md](VELOCITY_SETUP.md). Spigot не поддерживает этот режим modern forwarding.
+Spigot не поддерживает этот режим modern forwarding.
 
 ## Локализации
 

@@ -32,4 +32,3 @@
 - bundled language system with multiple default locales
 - AddHeads integration through `addhead.premium`
 - GitHub README files in English and Russian
-- Modrinth description files

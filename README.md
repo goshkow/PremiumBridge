@@ -48,14 +48,14 @@ PremiumBridge is a premium session manager for offline-mode Minecraft Java serve
 
 PremiumBridge supports Velocity but does not require it.
 
-1. Put `PremiumBridge-Velocity.jar` into `Velocity/plugins/`.
+1. Put `PremiumBridge-Velocity-Companion.jar` into `Velocity/plugins/`.
 2. Put `PremiumBridge.jar` into the `plugins/` folder of every Paper or Purpur backend.
 3. In `velocity.toml`, enable `online-mode = false` and `player-info-forwarding-mode = "modern"`.
 4. Enable native Velocity forwarding in `config/paper-global.yml` and use the same `forwarding.secret`.
 5. Start Velocity once, copy the generated `shared-secret` from `plugins/PremiumBridge/velocity.properties`, and set it as `premium-verification.velocity-modern.shared-secret` in the backend config.
 6. Set `premium-verification.mode` to `velocity-modern` and fully restart Velocity and the backend.
 
-The complete setup is available in [VELOCITY_SETUP.md](VELOCITY_SETUP.md). Spigot does not support this modern forwarding mode.
+Spigot does not support this modern forwarding mode.
 
 ## Languages
 
