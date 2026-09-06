@@ -12,7 +12,7 @@ update-check:
 
 language:
   # Default plugin language when auto-detection is disabled or no matching locale file exists.
-  # Examples: en_US, ru_RU, de_DE, fr_FR, pl_PL, uk_UA, es_ES, it_IT
+  # Examples: en_US, ru_RU, de_DE, fr_FR, pl_PL, uk_UA, es_ES, it_IT, zh_CN
   default: "en_US"
 
   # If true, PremiumBridge tries to use the player's Minecraft client locale automatically.
