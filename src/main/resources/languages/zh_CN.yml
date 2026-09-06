@@ -1,0 +1,37 @@
+prefix: "&6PremiumBridge &8» &7"
+
+command:
+  reload-success: "{prefix}配置已重新加载。"
+  usage: "{prefix}用法：/{label} reload"
+
+update:
+  available: "{prefix}&e有新的 PremiumBridge 版本可用：&f{latest} &7（当前：{current}）。"
+  sources: "&7发布源："
+  source-separator: "&8 | "
+  github: "&7GitHub 发布：&b{version}"
+  modrinth: "&7Modrinth 发布：&b{version}"
+  open-link: "&7打开发布页面。"
+
+migration:
+  prompt:
+    line-1: "{prefix}你首次使用正版账户加入。"
+    line-2: "&7为你的昵称找到了离线模式数据。"
+    line-3: "&7你想将你的背包、位置、统计和进度迁移到正版档案吗？"
+    button-yes: "&a[是]"
+    button-yes-hover: "&7将你的离线模式数据加载到正版档案中。"
+    button-separator: "&8 | "
+    button-no: "&c[否]"
+    button-no-hover: "&7保留你当前的正版数据并跳过迁移。"
+  completed: "{prefix}&a你的离线模式迁移已成功接受。"
+  reconnect-required: "{prefix}&e请重新连接一次，以便你迁移的背包、位置和统计正确加载。"
+  reconnect-kick: "&e请重新连接以完成迁移的离线模式数据加载。"
+  skipped: "{prefix}&e已跳过迁移。你当前的正版数据已保留。"
+  no-data: "{prefix}&e未找到可迁移的离线模式数据。"
+  no-pending-choice: "{prefix}&e没有待处理的迁移选择。"
+
+premium:
+  kick:
+    invalid-token: "&c无效的正版验证令牌。"
+    encryption-failed: "&c启用正版验证失败。"
+    error: "&c正版验证失败。"
+    protected-name: "&c你必须使用正版账户才能使用此昵称。"
